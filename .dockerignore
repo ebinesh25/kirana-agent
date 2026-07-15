@@ -1,0 +1,12 @@
+.env
+.env.test
+.git/
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+test*.sqlite
+output/
+*.pdf
+*.pptx
+key.json

@@ -2,7 +2,7 @@ from sqlalchemy import (
     Column, Integer, String, Float, Boolean, Text, DateTime, ForeignKey,
     CheckConstraint
 )
-from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy.orm import DeclarativeBase, relationship
 from datetime import datetime
 
 
@@ -62,6 +62,7 @@ class Bill(Base):
     idempotency_key = Column(Text, unique=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     finalized_at = Column(DateTime)
+    items = relationship("BillItem", backref="bill", lazy="selectin")
     __table_args__ = (
         CheckConstraint("status IN ('draft', 'finalized', 'cancelled')", name="ck_bill_status"),
     )

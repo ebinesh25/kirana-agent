@@ -39,3 +39,8 @@ alembic/versions/*.pyc
 .cache/
 .pytest_cache/
 *.sqlite
+
+
+# Deployment
+key.json
+output/

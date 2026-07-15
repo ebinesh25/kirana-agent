@@ -33,5 +33,10 @@ kirana-cli = "kirana.agent.cli:main"
 requires = ["setuptools>=75.0"]
 build-backend = "setuptools.build_meta"
 
+[tool.pytest.ini_options]
+markers = [
+    "e2e: end-to-end tests with real Gemini API calls (slow, costs money)",
+]
+
 [tool.setuptools.packages.find]
 where = ["src"]

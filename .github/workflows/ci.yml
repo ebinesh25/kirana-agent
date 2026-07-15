@@ -1,0 +1,114 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  GCP_PROJECT: kirana-agent
+  GCP_REGION: us-central1
+  ARTIFACT_REGISTRY: us-central1-docker.pkg.dev/kirana-agent/kirana-agent
+  IMAGE: bot
+  SERVICE: kirana-agent-bot
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install WeasyPrint system deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libpango-1.0-0 libpangoft2-1.0-0 libcairo2 libgdk-pixbuf2.0-0
+
+      - name: Install dependencies
+        run: pip install -e ".[dev]"
+
+      - name: Lint
+        run: ruff check src/ tests/
+
+      - name: Unit tests (no E2E)
+        run: pytest -m "not e2e" -v
+        env:
+          DATABASE_URL: sqlite:///test.sqlite
+
+  e2e:
+    needs: test
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install WeasyPrint system deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libpango-1.0-0 libpangoft2-1.0-0 libcairo2 libgdk-pixbuf2.0-0
+
+      - name: Install dependencies
+        run: pip install -e ".[dev]"
+
+      - name: E2E tests
+        run: pytest -m e2e -v --timeout=120
+        env:
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
+
+  deploy:
+    needs: [test, e2e]
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker ${{ env.GCP_REGION }}-docker.pkg.dev
+
+      - name: Build and push image
+        run: |
+          docker build -t ${{ env.ARTIFACT_REGISTRY }}/${{ env.IMAGE }}:${{ github.sha }} .
+          docker tag ${{ env.ARTIFACT_REGISTRY }}/${{ env.IMAGE }}:${{ github.sha }} \
+                     ${{ env.ARTIFACT_REGISTRY }}/${{ env.IMAGE }}:latest
+          docker push ${{ env.ARTIFACT_REGISTRY }}/${{ env.IMAGE }}:${{ github.sha }}
+          docker push ${{ env.ARTIFACT_REGISTRY }}/${{ env.IMAGE }}:latest
+
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy ${{ env.SERVICE }} \
+            --image ${{ env.ARTIFACT_REGISTRY }}/${{ env.IMAGE }}:${{ github.sha }} \
+            --region ${{ env.GCP_REGION }} \
+            --min-instances 1 \
+            --max-instances 3 \
+            --memory 1Gi \
+            --cpu 1 \
+            --no-allow-unauthenticated \
+            --set-secrets="GOOGLE_API_KEY=kirana-gemini-key:latest" \
+            --set-secrets="TELEGRAM_BOT_TOKEN=kirana-telegram-token:latest" \
+            --set-secrets="DATABASE_URL=kirana-db-url:latest" \
+            --set-env-vars="OUTPUT_DIR=/app/output"
+
+      - name: Verify deployment
+        run: |
+          gcloud run services describe ${{ env.SERVICE }} \
+            --region ${{ env.GCP_REGION }} \
+            --format="value(status.url)"
