@@ -38,3 +38,4 @@ alembic/versions/*.pyc
 # Testing
 .cache/
 .pytest_cache/
+*.sqlite
