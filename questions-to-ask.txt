@@ -1,0 +1,26 @@
+Hi Processity Team,
+
+I hope you're doing well.
+
+Thank you for sharing the assignment for the Fullstack AI Applied Engineer role. I've started working on it and wanted to clarify a few points before proceeding, as the brief mentioned that we could reach out with questions.
+
+    Should the bot start with a pre-seeded catalog of common Indian grocery products (including HSN codes and GST slabs), or should the owner create every product from scratch?
+    Should the agent support multiple draft bills simultaneously (for different customers), or is a single active draft bill sufficient?
+    Once a bill is finalized, should it be immutable, or should the agent support cancellations, returns, or credit notes?
+    Can the owner override selling prices or apply discounts while billing, or should the agent always enforce the configured selling price (and prevent selling below cost)?
+    Should every khata transaction be linked to an invoice, or should standalone manual credit/debit entries also be supported?
+    For GST, how closely should we adhere to the current Indian GST rules? Should we implement production-grade GST calculations (including HSN validation and item-specific tax rules), or is a realistic simulation with correct GST slabs and CGST/SGST breakup sufficient for the assignment?
+    Will the evaluation include edge cases such as duplicate Telegram updates, concurrent billing, overselling attempts, and ambiguous product requests?
+    Is any LLM and agent harness acceptable, or do you have a preferred provider/model that you'd like us to optimize for? I currently have access to the Gemini API through a Google AI Pro subscription. Is using Gemini perfectly acceptable, or would you recommend a provider such as Claude for this assignment?
+    Are there any mandatory sections or KPIs you expect in the generated PPTX analysis deck, or is its structure left to our discretion?
+    Should we assume a single store owner interacting through Telegram, or should the solution be designed to support multiple stores with isolated data?
+    The brief emphasizes that "the chat is the product" and discourages intent routers. During evaluation, is the primary focus on the agent's ability to dynamically compose and use tools through reasoning, or on the overall robustness of the implementation (business rules, persistence, concurrency, idempotency, etc.)? In other words, if the underlying implementation is robust but different models exhibit varying tool-selection quality, should we optimize for the strongest possible model behaviour, or is the architecture and correctness of the implementation the primary evaluation criterion?
+
+These clarifications will help me align my implementation with your expectations and focus on the aspects that matter most during evaluation.
+
+Thank you for your time. I look forward to your guidance.
+
+Regards,
+
+Ebinesh
+Software Developer
