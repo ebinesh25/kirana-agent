@@ -10,7 +10,8 @@ class Settings:
     DATABASE_URL: str = os.getenv("DATABASE_URL", "")
     DATABASE_URL_DIRECT: str = os.getenv("DATABASE_URL_DIRECT", "")
     SUPABASE_URL: str = os.getenv("SUPABASE_URL", "")
-    SUPABASE_KEY: str = os.getenv("SUPABASE_KEY", "")
+    SUPABASE_PUBLISHABLE_KEY: str = os.getenv("SUPABASE_PUBLISHABLE_KEY", "")
+    SUPABASE_SECRET_KEY: str = os.getenv("SUPABASE_SECRET_KEY", "")
     OUTPUT_DIR: str = os.getenv("OUTPUT_DIR", "/tmp/kirana-output")
 
 
