@@ -48,12 +48,35 @@ async def _keep_typing(chat_id: str, context, stop_event: asyncio.Event):
 
 async def _send_or_split(bot, chat_id: int, text: str, reply_markup=None):
     """Send a message, splitting at 4096 if needed."""
+    kwargs = dict(chat_id=chat_id, reply_markup=reply_markup)
     if len(text) <= 4096:
-        await bot.send_message(chat_id=chat_id, text=text, reply_markup=reply_markup)
+        await _send_with_markdown(bot, text, **kwargs)
     else:
         for i in range(0, len(text), 4096):
             mk = reply_markup if i == 0 else None
-            await bot.send_message(chat_id=chat_id, text=text[i:i + 4096], reply_markup=mk)
+            await _send_with_markdown(bot, text[i:i + 4096], chat_id=chat_id, reply_markup=mk)
+
+
+async def _send_with_markdown(bot, text: str, **kwargs):
+    """Send message with Markdown, fall back to plain text on error."""
+    try:
+        await bot.send_message(text=text, parse_mode="Markdown", **kwargs)
+    except Exception:
+        try:
+            await bot.send_message(text=text, **kwargs)
+        except Exception as e:
+            logger.error("Failed to send message: %s", e)
+
+
+async def _edit_with_markdown(msg_placeholder, text: str, reply_markup=None):
+    """Edit message with Markdown, fall back to plain text on error."""
+    try:
+        await msg_placeholder.edit_text(text, parse_mode="Markdown", reply_markup=reply_markup)
+    except Exception:
+        try:
+            await msg_placeholder.edit_text(text, reply_markup=reply_markup)
+        except Exception as e:
+            logger.error("Failed to edit message: %s", e)
 
 
 async def _send_files(bot, chat_id: int, file_paths: list[str]):
@@ -115,15 +138,15 @@ async def _handle_callback(update: Update, context):
     text = result.get("text", "") or ""
     suggestions = result.get("suggestions", [])
 
-    # If Gemini produced no text, use fallback
+    # If Gemini produced no text, log full result for debugging
     if not text.strip():
-        logger.warning("Empty response text from callback for: %s", option_text)
+        logger.warning("Empty response from callback for: %s | full result: %s", option_text, result)
         text = "Done. Anything else?"
 
     # Replace placeholder with real response
     reply_markup = _make_keyboard(suggestions) if suggestions else None
     if len(text) <= 4096:
-        await placeholder.edit_text(text, reply_markup=reply_markup)
+        await _edit_with_markdown(placeholder, text, reply_markup=reply_markup)
     else:
         await context.bot.delete_message(
             chat_id=chat_id_int, message_id=placeholder.message_id
@@ -204,15 +227,15 @@ async def _handle_text(update: Update, context):
     text = result.get("text", "") or ""
     suggestions = result.get("suggestions", [])
 
-    # If Gemini produced no text (e.g. only tool calls), use fallback
+    # If Gemini produced no text, log full result for debugging
     if not text.strip():
-        logger.warning("Empty response text from handle_message for: %s", update.message.text)
+        logger.warning("Empty response text for: %s | full result: %s", update.message.text, result)
         text = "Done. Anything else?"
 
     # Replace placeholder with real response
     reply_markup = _make_keyboard(suggestions) if suggestions else None
     if len(text) <= 4096:
-        await placeholder.edit_text(text, reply_markup=reply_markup)
+        await _edit_with_markdown(placeholder, text, reply_markup=reply_markup)
     else:
         await context.bot.delete_message(
             chat_id=chat_id_int, message_id=placeholder.message_id

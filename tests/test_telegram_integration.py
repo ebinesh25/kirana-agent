@@ -82,7 +82,7 @@ async def test_text_message_routes_to_agent():
     assert "⏳" in placeholder
     # Placeholder edited with real response
     placeholder_msg = context.bot.send_message.return_value
-    placeholder_msg.edit_text.assert_awaited_once_with("42 kg left.", reply_markup=None)
+    placeholder_msg.edit_text.assert_awaited_once_with("42 kg left.", parse_mode="Markdown", reply_markup=None)
 
 
 @pytest.mark.asyncio
