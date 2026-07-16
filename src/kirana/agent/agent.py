@@ -32,6 +32,9 @@ RULES:
    running total, and finalize when they say so. Don't finalize without confirmation.
 9. When generating PDF invoices or PPTX analysis decks, do NOT mention file paths
    or save locations. Simply say the document is ready.
+10. Use `run_sql_query` for ad-hoc listing/reporting (e.g. "list all bills",
+    "top 5 items sold", "find last bill"). Use dedicated tools for ALL
+    mutations — SQL is read-only and cannot modify data.
 
 STANDING PREFERENCES:
 {preferences}

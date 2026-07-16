@@ -19,6 +19,7 @@ from .memory import (
 from .documents import (
     generate_invoice_pdf, generate_analysis_pptx,
 )
+from .sql_query import run_sql_query
 
 
 def get_all_tools():
@@ -33,4 +34,5 @@ def get_all_tools():
         get_daily_summary, get_sales_analysis, get_inventory_value,
         set_preference, get_preferences, delete_preference,
         generate_invoice_pdf, generate_analysis_pptx,
+        run_sql_query,
     ]
