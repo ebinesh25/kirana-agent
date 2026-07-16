@@ -86,7 +86,14 @@ async def _handle_callback(update: Update, context):
     chat_id_str = str(update.effective_chat.id)
     chat_id_int = update.effective_chat.id
 
+    # Remove keyboard from original message
     await query.edit_message_reply_markup(reply_markup=None)
+
+    # ── Placeholder — user sees this immediately ──
+    placeholder = await context.bot.send_message(
+        chat_id=chat_id_int,
+        text="⏳ Give me a moment...",
+    )
 
     stop_typing = asyncio.Event()
     typing_task = asyncio.create_task(
@@ -99,17 +106,28 @@ async def _handle_callback(update: Update, context):
         stop_typing.set()
         await typing_task
         logger.error("Callback error: %s", e, exc_info=True)
-        await context.bot.send_message(chat_id=chat_id_int, text="Sorry, something went wrong. Please try again.")
+        await placeholder.edit_text("Sorry, something went wrong. Please try again.")
         return
     finally:
         stop_typing.set()
         await typing_task
 
-    text = result.get("text", "")
+    text = result.get("text", "") or ""
     suggestions = result.get("suggestions", [])
 
-    if text:
-        reply_markup = _make_keyboard(suggestions) if suggestions else None
+    # If Gemini produced no text, use fallback
+    if not text.strip():
+        logger.warning("Empty response text from callback for: %s", option_text)
+        text = "Done. Anything else?"
+
+    # Replace placeholder with real response
+    reply_markup = _make_keyboard(suggestions) if suggestions else None
+    if len(text) <= 4096:
+        await placeholder.edit_text(text, reply_markup=reply_markup)
+    else:
+        await context.bot.delete_message(
+            chat_id=chat_id_int, message_id=placeholder.message_id
+        )
         await _send_or_split(context.bot, chat_id_int, text, reply_markup=reply_markup)
 
     await _send_files(context.bot, chat_id_int, result.get("files", []))
