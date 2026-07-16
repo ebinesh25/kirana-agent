@@ -146,9 +146,14 @@ def add_product(
         product_dict = _product_to_dict(product)
 
     brand_label = f" {brand}" if brand else ""
+    size_desc = f"{unit_size}{unit_type} per pack" if unit_size else unit_type
     return {
         "product": product_dict,
-        "message": f"Added {name}{brand_label} ({unit_size}{unit_type}).",
+        "message": (
+            f"Added product '{name}{brand_label}' — "
+            f"unit size: {size_desc}, sell price: {_fmt_price(sell_price)}. "
+            f"Current stock: 0 (use receive_stock to add inventory)."
+        ),
     }
 
 

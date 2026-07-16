@@ -10,6 +10,7 @@ from .khata import (
     get_or_create_customer, add_credit, settle_credit,
     get_balance, list_khata, get_top_customers,
 )
+from .suggestions import suggest_options
 from .analytics import (
     get_daily_summary, get_sales_analysis, get_inventory_value,
 )
@@ -25,7 +26,7 @@ from .sql_query import run_sql_query
 def get_all_tools():
     """Return all tool functions for Agent(tools=[...]) registration."""
     return [
-        search_products, add_product, receive_stock,
+        search_products, add_product, receive_stock, suggest_options,
         get_stock, get_low_stock, adjust_stock,
         create_bill, add_item, update_item, remove_item,
         get_bill, finalize_bill, cancel_bill,

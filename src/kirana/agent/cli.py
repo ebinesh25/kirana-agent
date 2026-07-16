@@ -33,7 +33,13 @@ async def main():
         from kirana.agent.loop import handle_message
         result = await handle_message(chat_id, user_input)
 
-        print(f"Agent: {result['text']}\n")
+        print(f"Agent: {result['text']}")
+        suggestions = result.get("suggestions", [])
+        if suggestions:
+            for i, opt in enumerate(suggestions, 1):
+                print(f"  [{i}] {opt}")
+            print("(Type a number or your own answer)")
+        print()
         if result.get("files"):
             for f in result["files"]:
                 print(f"  📎 {f}")

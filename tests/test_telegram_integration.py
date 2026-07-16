@@ -3,7 +3,7 @@
 Uses unittest.mock to test handler logic without hitting Telegram API.
 """
 
-from unittest.mock import AsyncMock, Mock, patch, call, mock_open
+from unittest.mock import AsyncMock, Mock, patch, call, mock_open, ANY
 import pytest
 from kirana.bot.telegram_bot import start, new_chat, handle_text
 
@@ -72,7 +72,7 @@ async def test_text_message_routes_to_agent():
     with (
         patch("kirana.bot.telegram_bot.processed_updates_repo.is_processed", return_value=False),
         patch("kirana.bot.telegram_bot.processed_updates_repo.mark_processed"),
-        patch("kirana.bot.telegram_bot.handle_message", AsyncMock(return_value={"text": "42 kg left."})) as mock_handle,
+        patch("kirana.bot.telegram_bot.handle_message", AsyncMock(return_value={"text": "42 kg left.", "suggestions": []})) as mock_handle,
     ):
         await handle_text(update, context)
 
@@ -82,7 +82,7 @@ async def test_text_message_routes_to_agent():
     assert "⏳" in placeholder
     # Placeholder edited with real response
     placeholder_msg = context.bot.send_message.return_value
-    placeholder_msg.edit_text.assert_awaited_once_with("42 kg left.")
+    placeholder_msg.edit_text.assert_awaited_once_with("42 kg left.", parse_mode="Markdown", reply_markup=None)
 
 
 @pytest.mark.asyncio
@@ -134,7 +134,7 @@ async def test_long_response_split():
     with (
         patch("kirana.bot.telegram_bot.processed_updates_repo.is_processed", return_value=False),
         patch("kirana.bot.telegram_bot.processed_updates_repo.mark_processed"),
-        patch("kirana.bot.telegram_bot.handle_message", AsyncMock(return_value={"text": long_text})),
+        patch("kirana.bot.telegram_bot.handle_message", AsyncMock(return_value={"text": long_text, "suggestions": []})),
     ):
         await handle_text(update, context)
 
