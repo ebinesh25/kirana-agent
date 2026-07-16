@@ -214,8 +214,13 @@ async def _register_webhook():
 
 
 def main():
-    """Entry point: build PTB app, start aiohttp server, run forever."""
+    """Entry point: polling (local dev) or webhook (Cloud Run)."""
     _build_app()
+
+    if os.getenv("POLLING_MODE", "").lower() in ("1", "true", "yes"):
+        logger.info("Starting in polling mode (local dev)")
+        _app.run_polling()
+        return
 
     async def _run():
         await _app.initialize()
