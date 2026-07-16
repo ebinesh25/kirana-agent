@@ -101,7 +101,7 @@ class TestBillRepo:
 
     def test_next_bill_number_increments(self):
         n1 = bill_repo.next_bill_number()
-        bill = bill_repo.create_bill(chat_id="test_num")
+        bill_repo.create_bill(chat_id="test_num")
         n2 = bill_repo.next_bill_number()
         assert n2 != n1
 

@@ -45,7 +45,6 @@ class TestBillLifecycle:
 
     def test_add_item_rejects_finalized_bill(self):
         b = create_bill()["bill"]
-        maggi = product_repo.get_by_id(5)
         # adjust stock so there's enough for finalize
         add_item(b["id"], product_id=5, quantity=1)
         finalize_bill(b["id"], payment_mode="cash")
@@ -254,16 +253,8 @@ class TestGSTCorrectness:
 
     def test_gst_cgst_sgst_odd_paisa(self):
         """When tax is odd, cgst gets floor, sgst gets ceil."""
-        b = create_bill()["bill"]
         # Need a line where tax is odd
         # sell_price=100, qty=1, gst=5 → tax = 100*5//100 = 5 → cgst=2, sgst=3
-        # First add a test product manually or find one with right values
-        from kirana.db.connection import get_session
-        from kirana.db.models import Product
-        with get_session() as s:
-            existing = s.query(Product).filter(Product.gst_slab == 5).first()
-            # Use existing product with GST 5% where taxable * 5% gives odd tax
-            pass
         # Force by using Aashirvaad Atta with qty 1: taxable=26000, tax=1300, cgst=650, sgst=650 (even)
         # Use a smaller taxable: we know sell_price=1400 for Maggi, qty=1, gst=12
         # taxable=1400, tax=168 → even
@@ -365,9 +356,6 @@ class TestConcurrency:
     def test_concurrent_finalize_oversell(self):
         """Two threads, same product, total > stock → one succeeds, one fails."""
         from concurrent.futures import ThreadPoolExecutor, wait
-
-        b = create_bill()["bill"]
-        bid = b["id"]
 
         # Create two bills, each wanting 30 Maggi (only 48 in stock, so only 1 can succeed)
         b1 = create_bill()["bill"]

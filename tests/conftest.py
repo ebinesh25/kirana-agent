@@ -3,10 +3,10 @@ from dotenv import load_dotenv
 
 load_dotenv(".env.test")
 
-from kirana.db.connection import seed_db
-from kirana.db.models import Base
-from kirana.db.connection import engine
-from sqlalchemy import text
+from kirana.db.connection import seed_db  # noqa: E402
+from kirana.db.models import Base  # noqa: E402
+from kirana.db.connection import engine  # noqa: E402
+from sqlalchemy import text  # noqa: E402
 
 
 @pytest.fixture(autouse=True)
