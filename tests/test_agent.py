@@ -9,7 +9,6 @@ Tests verify structure:
 Full E2E tests with real Gemini are in Phase 8.
 """
 
-import pytest
 from kirana.agent.agent import build_agent, SYSTEM_PROMPT
 from kirana.agent.loop import (
     format_preferences,

@@ -3,7 +3,6 @@
 Tests call tools directly. Uses test DB fixtures from conftest.py.
 """
 
-import pytest
 from datetime import datetime, timedelta
 from kirana.tools.analytics import (
     get_daily_summary,

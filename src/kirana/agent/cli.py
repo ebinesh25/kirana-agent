@@ -5,7 +5,6 @@ Useful for testing before wiring Telegram.
 """
 
 import asyncio
-import sys
 
 
 async def main():

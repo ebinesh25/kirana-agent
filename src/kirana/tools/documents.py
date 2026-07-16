@@ -4,7 +4,6 @@ Produces real artifacts (hard part #8): GST-correct PDF invoices via WeasyPrint
 and business-analysis PowerPoint decks with embedded matplotlib charts.
 """
 
-import os
 from datetime import datetime, timedelta, date
 from pathlib import Path
 
@@ -183,7 +182,7 @@ def generate_analysis_pptx(period: str = "week") -> dict:
     matplotlib.use('Agg')
     import matplotlib.pyplot as plt
     from pptx import Presentation
-    from pptx.util import Inches, Pt, Emu
+    from pptx.util import Inches, Pt
     from pptx.dml.color import RGBColor
 
     _ensure_output_dir()
@@ -239,7 +238,7 @@ def generate_analysis_pptx(period: str = "week") -> dict:
     txBox = slide1.shapes.add_textbox(Inches(1), Inches(2), Inches(8), Inches(3))
     tf = txBox.text_frame
     p = tf.paragraphs[0]
-    p.text = f"Sales Analysis"
+    p.text = "Sales Analysis"
     p.font.size = Pt(40)
     p.font.bold = True
     p = tf.add_paragraph()

@@ -184,7 +184,6 @@ def receive_stock(
         if not product:
             return {"error": f"Product with id {product_id} not found."}
 
-        old_qty = product.quantity
         product.quantity += quantity
 
         movement = StockMovement(

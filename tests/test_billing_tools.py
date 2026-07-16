@@ -5,7 +5,6 @@ Uses test DB fixtures: create_all + seed per test.
 """
 
 import pytest
-from sqlalchemy import __version__ as sqla_version
 from kirana.db.connection import engine
 from kirana.tools.billing import (
     create_bill, add_item, update_item, remove_item,

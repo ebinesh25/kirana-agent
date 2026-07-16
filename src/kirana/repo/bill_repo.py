@@ -44,7 +44,6 @@ def _item_to_dict(item: BillItem) -> dict:
 
 
 def next_bill_number() -> str:
-    from sqlalchemy import func
     from kirana.db.connection import get_session
     from kirana.db.models import Bill
     with get_session() as session:

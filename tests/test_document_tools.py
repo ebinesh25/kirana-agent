@@ -7,10 +7,8 @@ PDF content verification uses pdfplumber for text extraction.
 PPTX verification uses python-pptx to inspect slide count and shapes.
 """
 
-import os
 from pathlib import Path
 
-import pytest
 import pdfplumber
 
 from kirana.tools.billing import create_bill, add_item, finalize_bill

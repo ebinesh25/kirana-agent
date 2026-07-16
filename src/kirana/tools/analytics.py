@@ -4,7 +4,7 @@ Provides business intelligence: daily summaries, sales trends, inventory valuati
 All monetary values in paise.
 """
 
-from datetime import date, datetime, timedelta
+from datetime import datetime, timedelta
 from sqlalchemy import func
 from kirana.db.connection import get_session
 from kirana.db.models import Bill, BillItem, Product
