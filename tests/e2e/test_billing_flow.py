@@ -2,7 +2,7 @@
 
 import pytest
 from kirana.agent.loop import handle_message
-from kirana.repo import product_repo, bill_repo
+from kirana.repo import product_repo
 
 
 @pytest.mark.e2e

@@ -3,7 +3,7 @@
 Uses unittest.mock to test handler logic without hitting Telegram API.
 """
 
-from unittest.mock import AsyncMock, Mock, patch, call, mock_open, ANY
+from unittest.mock import AsyncMock, Mock, patch, mock_open
 import pytest
 from kirana.bot.telegram_bot import start, new_chat, handle_text
 

@@ -19,7 +19,6 @@ SEED_PRODUCTS = [
 
 
 def run_seed():
-    from kirana.db.connection import get_session
     with get_session() as session:
         existing = session.query(Product).count()
         if existing > 0:

@@ -5,7 +5,6 @@ oversell guard, GST correctness, multi-turn bills, idempotency, concurrency.
 """
 
 from datetime import datetime
-from sqlalchemy import and_
 from kirana.db.connection import get_session
 from kirana.db.models import Bill, BillItem, Product, StockMovement, ChatState, KhataCustomer, KhataTransaction
 
@@ -126,7 +125,7 @@ def create_bill(customer_name: str | None = None) -> dict:
     Args:
         customer_name: Optional customer name for the bill.
     """
-    from kirana.agent.loop import get_current_chat_id
+    from kirana.agent.context import get_current_chat_id
     from kirana.db.models import ChatState
 
     chat_id = get_current_chat_id()

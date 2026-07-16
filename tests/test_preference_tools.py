@@ -3,7 +3,6 @@
 Tests call tools directly. Uses test DB fixtures from conftest.py.
 """
 
-import pytest
 from kirana.tools.memory import (
     set_preference,
     get_preferences,

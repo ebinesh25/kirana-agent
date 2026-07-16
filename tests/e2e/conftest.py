@@ -4,14 +4,12 @@ These tests use the real Gemini API (not mocked) and a dedicated test database.
 Run with: pytest -m e2e -v --timeout=60
 """
 
-import os
 import random
 
 import pytest
 import pytest_asyncio
 
-from kirana.db.connection import init_db, seed_db, engine, get_session
-from kirana.db.models import Base
+from kirana.db.connection import init_db, seed_db, engine
 from sqlalchemy import text
 
 

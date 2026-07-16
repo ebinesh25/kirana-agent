@@ -4,7 +4,6 @@ Observe → reason → act (call tool) → feed result back → continue
 until Gemini produces a final answer.
 """
 
-import asyncio
 import json
 from google.adk.runners import Runner
 from google.adk.sessions import InMemorySessionService
@@ -12,7 +11,7 @@ from google.genai.types import Content, Part
 
 from kirana.repo import preference_repo, bill_repo
 from kirana.agent.agent import build_agent
-from kirana.agent.context import get_current_chat_id, set_current_chat_id
+from kirana.agent.context import set_current_chat_id
 
 session_service = InMemorySessionService()
 APP_NAME = "kirana_store"

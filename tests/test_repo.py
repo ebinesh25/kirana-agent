@@ -1,7 +1,4 @@
-import pytest
 from kirana.repo import product_repo, stock_repo, bill_repo, khata_repo, preference_repo
-from kirana.db.connection import get_session
-from kirana.db.models import Product
 
 
 class TestProductRepo:
@@ -48,7 +45,6 @@ class TestProductRepo:
 
 class TestStockRepo:
     def test_stock_movement_audit_trail(self):
-        from kirana.repo import stock_repo
         m = stock_repo.record_movement(
             product_id=1,
             movement_type="in",

@@ -1,10 +1,9 @@
-import os
 import pytest
 from dotenv import load_dotenv
 
 load_dotenv(".env.test")
 
-from kirana.db.connection import seed_db, get_session
+from kirana.db.connection import seed_db
 from kirana.db.models import Base
 from kirana.db.connection import engine
 from sqlalchemy import text

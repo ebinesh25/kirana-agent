@@ -1,4 +1,4 @@
-from sqlalchemy import text, or_
+from sqlalchemy import or_
 from kirana.db.connection import get_session
 from kirana.db.models import Product
 

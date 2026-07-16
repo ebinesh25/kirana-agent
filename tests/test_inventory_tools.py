@@ -4,7 +4,6 @@ Tests call tools directly (not through the agent loop).
 Uses test DB fixtures from conftest.py (create_all + seed per test).
 """
 
-import pytest
 from kirana.tools.inventory import (
     search_products,
     add_product,

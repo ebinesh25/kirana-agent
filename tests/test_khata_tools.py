@@ -3,7 +3,6 @@
 Tests call tools directly. Uses test DB fixtures from conftest.py.
 """
 
-import pytest
 from kirana.tools.khata import (
     get_or_create_customer,
     add_credit,
@@ -11,8 +10,6 @@ from kirana.tools.khata import (
     get_balance,
     list_khata,
 )
-from kirana.db.connection import get_session
-from kirana.db.models import KhataCustomer
 
 
 # ---------------------------------------------------------------------------
