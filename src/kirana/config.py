@@ -13,6 +13,9 @@ class Settings:
     SUPABASE_PUBLISHABLE_KEY: str = os.getenv("SUPABASE_PUBLISHABLE_KEY", "")
     SUPABASE_SECRET_KEY: str = os.getenv("SUPABASE_SECRET_KEY", "")
     OUTPUT_DIR: str = os.getenv("OUTPUT_DIR", "/tmp/kirana-output")
+    SERVICE_URL: str = os.getenv("SERVICE_URL", "")
+    WEBHOOK_PATH: str = "webhook"
+    HEALTH_PATH: str = "health"
 
 
 settings = Settings()

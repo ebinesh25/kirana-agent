@@ -18,9 +18,13 @@ def _make_update(update_id=1, text="hello", chat_id="12345"):
 
 def _make_context():
     ctx = Mock()
-    ctx.bot.send_message = AsyncMock()
+    placeholder = AsyncMock()
+    placeholder.edit_text = AsyncMock()
+    placeholder.message_id = 99
+    ctx.bot.send_message = AsyncMock(return_value=placeholder)
     ctx.bot.send_chat_action = AsyncMock()
     ctx.bot.send_document = AsyncMock()
+    ctx.bot.delete_message = AsyncMock()
     return ctx
 
 
@@ -74,8 +78,11 @@ async def test_text_message_routes_to_agent():
 
     mock_handle.assert_awaited_once_with("12345", "how much sugar?")
     context.bot.send_message.assert_awaited_once()
-    args = context.bot.send_message.await_args
-    assert "42 kg" in args.kwargs["text"]
+    placeholder = context.bot.send_message.await_args.kwargs["text"]
+    assert "⏳" in placeholder
+    # Placeholder edited with real response
+    placeholder_msg = context.bot.send_message.return_value
+    placeholder_msg.edit_text.assert_awaited_once_with("42 kg left.")
 
 
 @pytest.mark.asyncio
@@ -112,8 +119,10 @@ async def test_error_handling():
         await handle_text(update, context)
 
     context.bot.send_message.assert_awaited_once()
-    args = context.bot.send_message.await_args
-    assert "wrong" in args.kwargs["text"]
+    placeholder_msg = context.bot.send_message.return_value
+    placeholder_msg.edit_text.assert_awaited_once()
+    err_text = placeholder_msg.edit_text.await_args[0][0]
+    assert "wrong" in err_text
 
 
 @pytest.mark.asyncio
@@ -129,6 +138,15 @@ async def test_long_response_split():
     ):
         await handle_text(update, context)
 
-    assert context.bot.send_message.await_count == 2
-    first_call = context.bot.send_message.await_args_list[0]
-    assert len(first_call.kwargs["text"]) == 4096
+    # Placeholder + 2 split chunks = 3 calls
+    assert context.bot.send_message.await_count == 3
+    # First call is placeholder
+    placeholder_text = context.bot.send_message.await_args_list[0].kwargs["text"]
+    assert "⏳" in placeholder_text
+    # Second and third calls are split text chunks
+    chunk1 = context.bot.send_message.await_args_list[1].kwargs["text"]
+    chunk2 = context.bot.send_message.await_args_list[2].kwargs["text"]
+    assert len(chunk1) == 4096
+    assert len(chunk2) == 5000 - 4096
+    # Delete called on placeholder
+    context.bot.delete_message.assert_awaited_once()
