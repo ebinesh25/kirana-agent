@@ -260,7 +260,7 @@ def generate_analysis_pptx(period: str = "week") -> dict:
     payment_dist = analysis.get("payment_distribution", {})
     gst_by_slab = analysis.get("gst_by_slab", [])
     inv_items = inventory.get("items", [])
-    low_stock = [i for i in inv_items if i["quantity"] <= 3]
+    low_stock = [i for i in inv_items if i["quantity"] <= i.get("reorder_level", 5)]
 
     # --- Slide 2: Overview ---
     slide2 = prs.slides.add_slide(blank_layout)
@@ -386,9 +386,9 @@ def generate_analysis_pptx(period: str = "week") -> dict:
 
     if low_items or healthy_items:
         all_items = healthy_items + low_items
-        names_health = [f"{i['name'][:15]} ({i['quantity']:.0f})" for i in all_items[:12]][::-1]
-        qty_health = [i["quantity"] for i in all_items[:12]][::-1]
-        colors_health = ["#4CAF50"] * len(healthy_items[:12]) + ["#F44336"] * len(low_items[:12])
+        names_health = [f"{i['name'][:15]} ({i['quantity']:.0f})" for i in all_items][::-1]
+        qty_health = [i["quantity"] for i in all_items][::-1]
+        colors_health = ["#4CAF50"] * len(healthy_items) + ["#F44336"] * len(low_items)
         colors_health = colors_health[-len(names_health):]
 
         fig, ax = plt.subplots(figsize=(8, max(3, len(names_health) * 0.4)))

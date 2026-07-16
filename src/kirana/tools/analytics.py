@@ -294,6 +294,7 @@ def get_inventory_value() -> dict:
                 "quantity": p.quantity,
                 "cost_price": p.cost_price,
                 "sell_price": p.sell_price,
+                "reorder_level": p.reorder_level,
                 "cost_value": int(p.quantity * p.cost_price),
                 "retail_value": int(p.quantity * p.sell_price),
             }
