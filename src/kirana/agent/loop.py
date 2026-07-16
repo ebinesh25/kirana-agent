@@ -6,27 +6,16 @@ until Gemini produces a final answer.
 
 import asyncio
 import json
-import contextvars
-
 from google.adk.runners import Runner
 from google.adk.sessions import InMemorySessionService
 from google.genai.types import Content, Part
 
 from kirana.repo import preference_repo, bill_repo
 from kirana.agent.agent import build_agent
+from kirana.agent.context import get_current_chat_id, set_current_chat_id
 
 session_service = InMemorySessionService()
 APP_NAME = "kirana_store"
-
-# Thread-safe context for passing chat_id to tools
-_current_chat_id: contextvars.ContextVar[str] = contextvars.ContextVar("current_chat_id")
-
-
-def get_current_chat_id() -> str:
-    try:
-        return _current_chat_id.get()
-    except LookupError:
-        return "test"
 
 
 def format_preferences(prefs: dict) -> str:
@@ -69,7 +58,7 @@ async def handle_message(chat_id: str, user_message: str) -> dict:
     Reuses existing ADK session per chat_id so Gemini remembers context.
     Returns {"text": ..., "files": [...]}.
     """
-    _current_chat_id.set(chat_id)
+    set_current_chat_id(chat_id)
 
     prefs = preference_repo.get_all()
     prefs_text = format_preferences(prefs)
@@ -120,7 +109,11 @@ async def handle_message(chat_id: str, user_message: str) -> dict:
 
     files = _extract_file_paths(all_events)
 
-    return {"text": response_text, "files": files}
+    from kirana.tools.suggestions import get_suggestions, clear_suggestions
+    suggestions = get_suggestions(chat_id)
+    clear_suggestions(chat_id)
+
+    return {"text": response_text, "files": files, "suggestions": suggestions}
 
 
 async def clear_session(chat_id: str):

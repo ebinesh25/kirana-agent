@@ -11,8 +11,8 @@ import os
 from datetime import datetime, timezone
 
 from aiohttp import web
-from telegram import Update
-from telegram.ext import Application, CommandHandler, MessageHandler, filters
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, filters
 
 from kirana.agent.loop import handle_message, clear_session
 from kirana.repo import processed_updates_repo
@@ -46,13 +46,14 @@ async def _keep_typing(chat_id: str, context, stop_event: asyncio.Event):
             continue
 
 
-async def _send_or_split(bot, chat_id: int, text: str):
+async def _send_or_split(bot, chat_id: int, text: str, reply_markup=None):
     """Send a message, splitting at 4096 if needed."""
     if len(text) <= 4096:
-        await bot.send_message(chat_id=chat_id, text=text)
+        await bot.send_message(chat_id=chat_id, text=text, reply_markup=reply_markup)
     else:
         for i in range(0, len(text), 4096):
-            await bot.send_message(chat_id=chat_id, text=text[i:i + 4096])
+            mk = reply_markup if i == 0 else None
+            await bot.send_message(chat_id=chat_id, text=text[i:i + 4096], reply_markup=mk)
 
 
 async def _send_files(bot, chat_id: int, file_paths: list[str]):
@@ -73,9 +74,51 @@ async def _send_files(bot, chat_id: int, file_paths: list[str]):
 # PTB Handlers
 # ──────────────────────────────────────────────
 
+def _make_keyboard(options: list[str]) -> InlineKeyboardMarkup:
+    buttons = [[InlineKeyboardButton(opt, callback_data=opt)] for opt in options]
+    return InlineKeyboardMarkup(buttons)
+
+
+async def _handle_callback(update: Update, context):
+    query = update.callback_query
+    await query.answer()
+    option_text = query.data
+    chat_id_str = str(update.effective_chat.id)
+    chat_id_int = update.effective_chat.id
+
+    await query.edit_message_reply_markup(reply_markup=None)
+
+    stop_typing = asyncio.Event()
+    typing_task = asyncio.create_task(
+        _keep_typing(chat_id_str, context, stop_typing)
+    )
+
+    try:
+        result = await handle_message(chat_id_str, option_text)
+    except Exception as e:
+        stop_typing.set()
+        await typing_task
+        logger.error("Callback error: %s", e, exc_info=True)
+        await context.bot.send_message(chat_id=chat_id_int, text="Sorry, something went wrong. Please try again.")
+        return
+    finally:
+        stop_typing.set()
+        await typing_task
+
+    text = result.get("text", "")
+    suggestions = result.get("suggestions", [])
+
+    if text:
+        reply_markup = _make_keyboard(suggestions) if suggestions else None
+        await _send_or_split(context.bot, chat_id_int, text, reply_markup=reply_markup)
+
+    await _send_files(context.bot, chat_id_int, result.get("files", []))
+
+
 def _build_app():
     _app.add_handler(CommandHandler("start", _start))
     _app.add_handler(CommandHandler("new", _new_chat))
+    _app.add_handler(CallbackQueryHandler(_handle_callback))
     _app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, _handle_text))
 
 
@@ -140,18 +183,23 @@ async def _handle_text(update: Update, context):
         stop_typing.set()
         await typing_task
 
-    text = result.get("text", "")
+    text = result.get("text", "") or ""
+    suggestions = result.get("suggestions", [])
+
+    # If Gemini produced no text (e.g. only tool calls), use fallback
+    if not text.strip():
+        logger.warning("Empty response text from handle_message for: %s", update.message.text)
+        text = "Done. Anything else?"
 
     # Replace placeholder with real response
-    if text:
-        if len(text) <= 4096:
-            await placeholder.edit_text(text)
-        else:
-            # edit_text limit is 4096 — delete placeholder, send fresh
-            await context.bot.delete_message(
-                chat_id=chat_id_int, message_id=placeholder.message_id
-            )
-            await _send_or_split(context.bot, chat_id_int, text)
+    reply_markup = _make_keyboard(suggestions) if suggestions else None
+    if len(text) <= 4096:
+        await placeholder.edit_text(text, reply_markup=reply_markup)
+    else:
+        await context.bot.delete_message(
+            chat_id=chat_id_int, message_id=placeholder.message_id
+        )
+        await _send_or_split(context.bot, chat_id_int, text, reply_markup=reply_markup)
 
     # Send files (PDF/PPTX)
     await _send_files(context.bot, chat_id_int, result.get("files", []))
