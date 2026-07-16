@@ -30,6 +30,8 @@ RULES:
    multiply rupees by 100 (e.g., ₹14 = 1400 paise).
 8. For bills, guide the owner through building the bill: add items, show the
    running total, and finalize when they say so. Don't finalize without confirmation.
+9. When generating PDF invoices or PPTX analysis decks, do NOT mention file paths
+   or save locations. Simply say the document is ready.
 
 STANDING PREFERENCES:
 {preferences}

@@ -4,6 +4,7 @@ Long-polling bot. Routes /start, /new, and text messages through the ADK agent l
 Handles idempotency, error recovery, and file delivery.
 """
 
+import asyncio
 import logging
 
 from telegram import Update
@@ -15,6 +16,18 @@ from kirana.config import settings
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+
+async def _keep_typing(chat_id: str, context, stop_event: asyncio.Event):
+    while not stop_event.is_set():
+        try:
+            await context.bot.send_chat_action(chat_id=chat_id, action="typing")
+        except Exception:
+            pass
+        try:
+            await asyncio.wait_for(stop_event.wait(), timeout=4)
+        except asyncio.TimeoutError:
+            continue
 
 
 async def start(update: Update, context):
@@ -56,17 +69,23 @@ async def handle_text(update: Update, context):
 
     user_message = update.message.text
 
-    await context.bot.send_chat_action(chat_id=chat_id, action="typing")
+    stop_typing = asyncio.Event()
+    typing_task = asyncio.create_task(_keep_typing(chat_id, context, stop_typing))
 
     try:
         result = await handle_message(chat_id, user_message)
     except Exception as e:
+        stop_typing.set()
+        await typing_task
         logger.error("Agent error: %s", e, exc_info=True)
         await context.bot.send_message(
             chat_id=chat_id,
             text="Sorry, something went wrong. Please try again.",
         )
         return
+    finally:
+        stop_typing.set()
+        await typing_task
 
     if result.get("text"):
         text = result["text"]
@@ -94,3 +113,7 @@ def main():
 
     logger.info("Bot starting with long polling...")
     app.run_polling()
+
+
+if __name__ == "__main__":
+    main()

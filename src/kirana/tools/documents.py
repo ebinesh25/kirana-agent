@@ -165,7 +165,7 @@ def generate_invoice_pdf(bill_id: int) -> dict:
     return {
         "file_path": str(file_path),
         "bill_number": bill.bill_number,
-        "message": f"Invoice {bill.bill_number} generated as PDF.",
+        "message": f"Invoice {bill.bill_number} ready.",
     }
 
 
@@ -412,5 +412,5 @@ def generate_analysis_pptx(period: str = "week") -> dict:
     return {
         "file_path": str(file_path),
         "period": period,
-        "message": f"Sales analysis deck generated for {start} to {end}.",
+        "message": f"Analysis deck ready for {start} to {end}.",
     }

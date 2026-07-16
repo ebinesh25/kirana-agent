@@ -6,7 +6,7 @@ All amounts in paise.
 
 from sqlalchemy import func
 from kirana.db.connection import get_session
-from kirana.db.models import KhataCustomer, KhataTransaction
+from kirana.db.models import Bill, KhataCustomer, KhataTransaction
 from kirana.repo import khata_repo
 
 
@@ -224,3 +224,53 @@ def list_khata() -> dict:
         "count": len(customers),
         "message": f"{len(customers)} customer(s):\n" + "\n".join(lines),
     }
+
+
+def get_top_customers(n: int = 10) -> dict:
+    """List top customers by total spend across finalized bills.
+
+    Args:
+        n: Number of top customers to return (default 10, max 50)
+    """
+    n = min(max(n, 1), 50)
+
+    with get_session() as session:
+        rows = (
+            session.query(
+                Bill.customer_name,
+                func.sum(Bill.grand_total).label("total_spent"),
+                func.count(Bill.id).label("bill_count"),
+            )
+            .filter(
+                Bill.status == "finalized",
+                Bill.customer_name.isnot(None),
+            )
+            .group_by(Bill.customer_name)
+            .order_by(func.sum(Bill.grand_total).desc())
+            .limit(n)
+            .all()
+        )
+
+        if not rows:
+            return {"customers": [], "message": "No customer spend data yet."}
+
+        customers = [
+            {
+                "name": r.customer_name,
+                "total_spent": int(r.total_spent),
+                "total_spent_fmt": _fmt_price(int(r.total_spent)),
+                "bill_count": r.bill_count,
+            }
+            for r in rows
+        ]
+
+        lines = [
+            f"{i+1}. {c['name']} — {c['total_spent_fmt']} ({c['bill_count']} bills)"
+            for i, c in enumerate(customers)
+        ]
+
+        return {
+            "customers": customers,
+            "count": len(customers),
+            "message": f"Top {len(customers)} customer(s) by spend:\n" + "\n".join(lines),
+        }

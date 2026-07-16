@@ -8,7 +8,7 @@ from .billing import (
 )
 from .khata import (
     get_or_create_customer, add_credit, settle_credit,
-    get_balance, list_khata,
+    get_balance, list_khata, get_top_customers,
 )
 from .analytics import (
     get_daily_summary, get_sales_analysis, get_inventory_value,
@@ -29,7 +29,7 @@ def get_all_tools():
         create_bill, add_item, update_item, remove_item,
         get_bill, finalize_bill, cancel_bill,
         get_or_create_customer, add_credit, settle_credit,
-        get_balance, list_khata,
+        get_balance, list_khata, get_top_customers,
         get_daily_summary, get_sales_analysis, get_inventory_value,
         set_preference, get_preferences, delete_preference,
         generate_invoice_pdf, generate_analysis_pptx,
