@@ -1,4 +1,4 @@
-from sqlalchemy import text
+from sqlalchemy import text, or_
 from kirana.db.connection import get_session
 from kirana.db.models import Product
 
@@ -23,6 +23,20 @@ def _row_to_dict(product: Product) -> dict:
     }
 
 
+def _search_terms(query: str) -> list[str]:
+    """Generate search term variations for basic singular/plural matching."""
+    terms = [query]
+    if query.lower().endswith("ies") and len(query) > 4:
+        terms.append(query[:-3] + "y")     # berries → berry
+    elif query.lower().endswith("s") and not query.lower().endswith("ss") and len(query) > 3:
+        terms.append(query[:-1])            # biscuits → biscuit, attas → atta
+    else:
+        terms.append(query + "s")           # biscuit → biscuits
+        if query.lower().endswith("y") and len(query) > 3:
+            terms.append(query[:-1] + "ies")  # berry → berries
+    return list(set(terms))
+
+
 def get_by_id(product_id: int) -> dict | None:
     with get_session() as session:
         product = session.query(Product).filter(Product.id == product_id).first()
@@ -31,12 +45,15 @@ def get_by_id(product_id: int) -> dict | None:
 
 def search(query: str) -> list[dict]:
     with get_session() as session:
-        pattern = f"%{query}%"
+        terms = _search_terms(query)
+        conditions = []
+        for term in terms:
+            pattern = f"%{term}%"
+            conditions.append(Product.name.ilike(pattern))
+            conditions.append(Product.brand.ilike(pattern))
         products = (
             session.query(Product)
-            .filter(
-                Product.name.ilike(pattern) | Product.brand.ilike(pattern)
-            )
+            .filter(or_(*conditions))
             .all()
         )
         return [_row_to_dict(p) for p in products]
