@@ -10,6 +10,7 @@ dependencies = [
     "google-adk",
     "google-genai",
     "python-telegram-bot",
+    "aiohttp",
     "weasyprint",
     "python-pptx",
     "matplotlib",
