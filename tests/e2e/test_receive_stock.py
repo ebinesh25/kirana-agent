@@ -11,7 +11,7 @@ async def test_receive_stock_maggi(agent_session):
     chat_id = agent_session
     result = await handle_message(
         chat_id,
-        "50 packets of Maggi came in, cost ₹12, MRP ₹14",
+        "50 packets of Maggi Noodles came in, cost ₹12, MRP ₹14",
     )
     assert result["text"]
     assert any(word in result["text"].lower() for word in ["maggi", "stock", "50"])

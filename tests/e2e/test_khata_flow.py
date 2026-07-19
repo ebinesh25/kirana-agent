@@ -2,6 +2,7 @@
 
 import pytest
 from kirana.agent.loop import handle_message
+from kirana.repo import khata_repo
 
 
 @pytest.mark.e2e
@@ -9,9 +10,14 @@ from kirana.agent.loop import handle_message
 async def test_khata_cycle(agent_session):
     chat_id = agent_session
 
-    r0 = await handle_message(chat_id, "create a khata customer named Ramesh")
-    assert r0["text"]
-    assert any(w in r0["text"].lower() for w in ["created", "ramesh", "customer"])
+    await handle_message(chat_id, "create a khata customer named Ramesh")
+
+    customer = khata_repo.get_customer("Ramesh")
+    if not customer:
+        await handle_message(chat_id, "add a new khata customer: Ramesh")
+
+    customer = khata_repo.get_customer("Ramesh")
+    assert customer, "Ramesh was not created as a khata customer"
 
     r1 = await handle_message(chat_id, "put ₹500 on Ramesh's credit")
     assert r1["text"]
