@@ -44,3 +44,8 @@ alembic/versions/*.pyc
 # Deployment
 key.json
 output/
+
+.*
+*.md
+!.github/workflows
+!.githooks

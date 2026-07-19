@@ -34,10 +34,14 @@ python -m pytest tests/ --ignore=tests/e2e -q
 echo "✅ Unit tests passed"
 echo ""
 
-# ── E2E tests ──
-echo "--- E2E tests ---"
-python -m pytest tests/e2e -q
-echo "✅ E2E tests passed"
+# ── E2E tests (only if API key available) ──
+if [ -n "$GOOGLE_API_KEY" ]; then
+    echo "--- E2E tests ---"
+    python -m pytest tests/e2e -q
+    echo "✅ E2E tests passed"
+else
+    echo "--- E2E tests (skipped — GOOGLE_API_KEY not set) ---"
+fi
 echo ""
 
 echo "========================================"
