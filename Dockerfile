@@ -15,9 +15,14 @@ COPY src/ src/
 COPY alembic.ini .
 COPY alembic/ alembic/
 
-RUN mkdir -p /app/output
+RUN mkdir -p /app/output && \
+    useradd --create-home --uid 1000 kirana && \
+    chown -R kirana:kirana /app
+
+USER kirana
 
 ENV OUTPUT_DIR=/app/output
 ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
 
 CMD ["python", "-m", "kirana.bot.telegram_bot"]
