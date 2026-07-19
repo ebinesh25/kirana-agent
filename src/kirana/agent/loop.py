@@ -5,13 +5,15 @@ until Gemini produces a final answer.
 """
 
 import json
+import logging
 from google.adk.runners import Runner
 from google.adk.sessions import InMemorySessionService
 from google.genai.types import Content, Part
-
 from kirana.repo import preference_repo, bill_repo
 from kirana.agent.agent import build_agent
 from kirana.agent.context import set_current_chat_id
+
+logger = logging.getLogger(__name__)
 
 session_service = InMemorySessionService()
 APP_NAME = "kirana_store"
@@ -86,25 +88,90 @@ async def handle_message(chat_id: str, user_message: str) -> dict:
             user_id=chat_id,
         )
 
-    user_content = Content(
-        role="user",
-        parts=[Part(text=user_message)],
+    async def _run_once(message: str) -> tuple[str, list, list]:
+        """Run the agent loop once, return (response_text, all_events, tool_called)."""
+        local_text = ""
+        local_events = []
+        local_content = Content(
+            role="user",
+            parts=[Part(text=message)],
+        )
+        async for event in runner.run_async(
+            user_id=chat_id,
+            session_id=session.id,
+            new_message=local_content,
+        ):
+            local_events.append(event)
+            if event.is_final_response():
+                if event.content and event.content.parts:
+                    for part in event.content.parts:
+                        if part.text:
+                            local_text += part.text
+
+        # Fallback: scan all events for text
+        if not local_text:
+            for evt in reversed(local_events):
+                if evt.content and evt.content.parts:
+                    texts = [p.text for p in evt.content.parts if p.text]
+                    if texts:
+                        local_text = "".join(texts)
+                        break
+
+        tool_called = any(
+            evt.get_function_calls() for evt in local_events
+        )
+
+        # Fallback text when tools executed but model gave no final text
+        if not local_text and tool_called:
+            local_text = "Done. Anything else?"
+            logger.warning("Empty response; tools called, using fallback text")
+
+        return local_text, local_events, tool_called
+
+    response_text, all_events, tool_called = await _run_once(user_message)
+
+    # Retry on empty response OR if model didn't call tools for action-like message
+    # Handle: empty text (stuck in tool loop), hallucinated actions (no tools called)
+    should_retry = (
+        not response_text
+        or (not tool_called and any(
+            word in response_text.lower()
+            for word in ["recorded", "added", "created", "updated", "received"]
+        ))
     )
-
-    response_text = ""
-    all_events = []
-
-    async for event in runner.run_async(
-        user_id=chat_id,
-        session_id=session.id,
-        new_message=user_content,
-    ):
-        all_events.append(event)
-        if event.is_final_response():
-            if event.content and event.content.parts:
-                for part in event.content.parts:
-                    if part.text:
-                        response_text += part.text
+    if should_retry:
+        logger.warning(
+            "No tool called for action-like message. Retrying once."
+        )
+        # Send follow-up nudge in the same session
+        follow_up = Content(
+            role="user",
+            parts=[Part(text="Please proceed — use the appropriate tool to fulfill this request.")],
+        )
+        retry_text = ""
+        retry_events = []
+        async for event in runner.run_async(
+            user_id=chat_id,
+            session_id=session.id,
+            new_message=follow_up,
+        ):
+            retry_events.append(event)
+            if event.is_final_response():
+                if event.content and event.content.parts:
+                    for part in event.content.parts:
+                        if part.text:
+                            retry_text += part.text
+        if not retry_text:
+            for evt in reversed(retry_events):
+                if evt.content and evt.content.parts:
+                    texts = [p.text for p in evt.content.parts if p.text]
+                    if texts:
+                        retry_text = "".join(texts)
+                        break
+        if not retry_text and any(evt.get_function_calls() for evt in retry_events):
+            retry_text = "Done. Anything else?"
+        response_text = retry_text
+        all_events = retry_events
 
     files = _extract_file_paths(all_events)
 

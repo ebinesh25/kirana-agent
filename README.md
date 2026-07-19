@@ -41,20 +41,49 @@ Each Telegram message enters the bot handler, which loads preferences + active b
 
 - Python 3.12 + Google ADK + Gemini 2.5 Flash
 - Supabase (Postgres) + SQLAlchemy 2.0
-- python-telegram-bot (long polling)
+- python-telegram-bot + aiohttp (webhook)
 - WeasyPrint (PDF) + python-pptx + matplotlib (PPTX)
 - GCP Cloud Run + GitHub Actions CI/CD
 - pytest + pytest-asyncio (148 unit + 15 E2E tests)
 
 ## Running locally
 
+Bot runs in webhook mode everywhere. Telegram needs a public HTTPS URL to push updates. Use a tunnel to expose localhost:
+
+### With ngrok
+
 ```bash
+# Terminal 1 — tunnel
+ngrok http 8080
+# → https://abc123.ngrok.app
+
+# Terminal 2 — bot
+cd kirana-agent
 cp .env.example .env  # set GOOGLE_API_KEY, TELEGRAM_BOT_TOKEN, DATABASE_URL
-pip install -e ".[dev]"
-python -m kirana.bot.telegram_bot
+SERVICE_URL=https://abc123.ngrok.app python -m kirana.bot.telegram_bot
 ```
 
-Or use the CLI test harness:
+### With Cloudflare Tunnel
+
+```bash
+# Terminal 1 — tunnel
+cloudflared tunnel --url http://localhost:8080
+# → https://random-name.trycloudflare.com
+
+# Terminal 2 — bot
+SERVICE_URL=https://random-name.trycloudflare.com python -m kirana.bot.telegram_bot
+```
+
+On startup, bot calls `setWebhook` with `SERVICE_URL` — Telegram pushes all messages through the tunnel to your machine.
+
+### Verify
+
+```bash
+curl http://localhost:8080/health
+curl https://your-tunnel-url.ngrok.app/health
+```
+
+### CLI test harness (no Telegram)
 
 ```bash
 python -m kirana.agent.cli
@@ -68,6 +97,6 @@ src/kirana/
   repo/        # Data access layer (products, bills, khata, etc.)
   tools/       # Tool groups: inventory, billing, khata, analytics, documents, memory
   agent/       # ADK Agent builder + async loop + CLI
-  bot/         # Telegram bot (long polling)
+  bot/         # Telegram bot (webhook / aiohttp server)
   config.py    # Env-based configuration
 ```

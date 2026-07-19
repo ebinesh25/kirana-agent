@@ -1,0 +1,45 @@
+#!/bin/bash
+# Pre-push hook — runs lint, unit tests, and e2e tests before push.
+
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$SCRIPT_DIR"
+
+# Activate virtual environment if it exists
+if [ -f ".venv/bin/activate" ]; then
+    source .venv/bin/activate
+elif [ -f "venv/bin/activate" ]; then
+    source venv/bin/activate
+fi
+
+# Ensure DATABASE_URL is set (defaults to SQLite for local testing)
+export DATABASE_URL="${DATABASE_URL:-sqlite:///test_push.sqlite}"
+
+echo ""
+echo "========================================"
+echo "  Pre-push checks                       "
+echo "========================================"
+
+# ── Ruff lint ──
+echo ""
+echo "--- ruff lint ---"
+ruff check src/ tests/
+echo "✅ Lint passed"
+echo ""
+
+# ── Unit tests ──
+echo "--- Unit tests (excl. e2e) ---"
+python -m pytest tests/ --ignore=tests/e2e -q
+echo "✅ Unit tests passed"
+echo ""
+
+# ── E2E tests ──
+echo "--- E2E tests ---"
+python -m pytest tests/e2e -q
+echo "✅ E2E tests passed"
+echo ""
+
+echo "========================================"
+echo "  All checks passed — pushing ✅"
+echo "========================================"
