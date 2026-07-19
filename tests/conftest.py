@@ -15,7 +15,14 @@ def setup_db():
     seed_db()
     yield
     with engine.connect() as conn:
-        conn.execute(text("PRAGMA foreign_keys = OFF"))
+        try:
+            conn.execute(text("SET session_replication_role = 'replica'"))
+        except Exception:
+            pass
         for table in reversed(Base.metadata.sorted_tables):
             conn.execute(text(f"DROP TABLE IF EXISTS {table.name}"))
+        try:
+            conn.execute(text("SET session_replication_role = 'origin'"))
+        except Exception:
+            pass
         conn.commit()

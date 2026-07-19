@@ -173,6 +173,9 @@ async def handle_message(chat_id: str, user_message: str) -> dict:
         response_text = retry_text
         all_events = retry_events
 
+    if not response_text:
+        response_text = "I understood your request but couldn't produce a response. Could you rephrase?"
+
     files = _extract_file_paths(all_events)
 
     from kirana.tools.suggestions import get_suggestions, clear_suggestions

@@ -5,6 +5,7 @@ active bill state injected each turn.
 """
 
 from google.adk.agents import Agent
+from google.genai.types import GenerateContentConfig, AutomaticFunctionCallingConfig
 from kirana.tools import get_all_tools
 
 SYSTEM_PROMPT = """You are the assistant for an Indian kirana (grocery) store.
@@ -68,4 +69,7 @@ def build_agent(preferences: str, active_bill: str) -> Agent:
         description="Runs an Indian kirana store — stock, billing, khata, invoices, analytics.",
         instruction=instruction,
         tools=get_all_tools(),
+        generate_content_config=GenerateContentConfig(
+            automatic_function_calling=AutomaticFunctionCallingConfig(disable=False),
+        ),
     )

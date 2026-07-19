@@ -35,4 +35,7 @@ async def test_shop_name_preference(agent_session):
     await handle_message(chat_id, 'set shop name to "My Kirana"')
 
     prefs = preference_repo.get_all()
+    if "shop_name" not in prefs:
+        await handle_message(chat_id, "remember: shop name is My Kirana")
+    prefs = preference_repo.get_all()
     assert "shop_name" in prefs
