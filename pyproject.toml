@@ -24,6 +24,7 @@ dev = [
     "pytest-asyncio",
     "ruff",
     "httpx",
+    "pdfplumber",
 ]
 
 [project.scripts]

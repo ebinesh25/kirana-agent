@@ -24,10 +24,17 @@ logger = logging.getLogger(__name__)
 _start_time = datetime.now(timezone.utc)
 
 # ──────────────────────────────────────────────
-# PTB Application (built once, shared)
+# PTB Application (built once, shared — lazily so import doesn't require token)
 # ──────────────────────────────────────────────
 
-_app = Application.builder().token(settings.TELEGRAM_BOT_TOKEN).build()
+_app: Application | None = None
+
+
+def _get_app() -> Application:
+    global _app
+    if _app is None:
+        _app = Application.builder().token(settings.TELEGRAM_BOT_TOKEN).build()
+    return _app
 
 
 # ──────────────────────────────────────────────
@@ -157,10 +164,11 @@ async def _handle_callback(update: Update, context):
 
 
 def _build_app():
-    _app.add_handler(CommandHandler("start", _start))
-    _app.add_handler(CommandHandler("new", _new_chat))
-    _app.add_handler(CallbackQueryHandler(_handle_callback))
-    _app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, _handle_text))
+    app = _get_app()
+    app.add_handler(CommandHandler("start", _start))
+    app.add_handler(CommandHandler("new", _new_chat))
+    app.add_handler(CallbackQueryHandler(_handle_callback))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, _handle_text))
 
 
 async def _start(update: Update, context):
@@ -285,8 +293,9 @@ async def _index_get(request):
 
 async def _webhook_post(request):
     data = await request.json()
-    update = Update.de_json(data, _app.bot)
-    await _app.process_update(update)
+    app = _get_app()
+    update = Update.de_json(data, app.bot)
+    await app.process_update(update)
     return web.Response(text="ok")
 
 
@@ -298,17 +307,18 @@ async def _register_webhook():
     """Auto-register the Telegram webhook on startup if SERVICE_URL is set."""
     if settings.SERVICE_URL:
         url = f"{settings.SERVICE_URL}/{settings.WEBHOOK_PATH}"
-        await _app.bot.set_webhook(url=url)
+        await _get_app().bot.set_webhook(url=url)
         logger.info("Telegram webhook registered: %s", url)
 
 
 def main():
     """Entry point: build PTB app, start aiohttp server, run forever."""
     _build_app()
+    app = _get_app()
 
     async def _run():
-        await _app.initialize()
-        await _app.start()
+        await app.initialize()
+        await app.start()
         await _register_webhook()
 
         web_app = web.Application()
