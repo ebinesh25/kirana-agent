@@ -1,6 +1,6 @@
 # Kirana Agent — Run a kirana store from Telegram
 
-**Bot:** @your_bot_username (live on GCP Cloud Run)
+**Bot:** [@agentic_kirana_bot](https://t.me/agentic_kirana_bot) (live on GCP Cloud Run)
 
 Conversational agent that operates an Indian kirana store end-to-end through Telegram — stock management, billing, khata credit, invoices, and analytics. All in plain language.
 
